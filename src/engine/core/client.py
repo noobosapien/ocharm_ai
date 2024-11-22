@@ -35,6 +35,11 @@ class Client:
             self._id = uuid.uuid4().hex
         else:
             self._id = id
+            
+    def get_id(self) -> str:
+        """Return the custom defined user_id of the client"""
+        return self._user_id
+        
 
     def add_engine(self, engine) -> None:
         """Adds the pied_piper engine instance to work with"""

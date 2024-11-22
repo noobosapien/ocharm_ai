@@ -1,6 +1,8 @@
 import traceback
-from typing import Any
-from uuid import UUID
+
+from engine.core.agent import Agent  
+from MessageHandler import ChatModelStartHandler
+
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.callbacks.base import BaseCallbackHandler
@@ -9,46 +11,19 @@ from langchain.prompts import (ChatPromptTemplate, HumanMessagePromptTemplate,
                                MessagesPlaceholder)
 from langchain.schema import SystemMessage
 from langchain.tools import StructuredTool
-from langchain_core.messages import BaseMessage
 from langchain_openai.chat_models import ChatOpenAI
 
-from core.agent import Agent
-from modules.timeline import Timeline
 
-
-class ChatModelStartHandler(BaseCallbackHandler):
-    def on_chat_model_start(
-        self,
-        serialized: dict[str, Any],
-        messages: list[list[BaseMessage]],
-        *,
-        run_id: UUID,
-        parent_run_id: UUID | None = None,
-        tags: list[str] | None = None,
-        metadata: dict[str, Any] | None = None,
-        **kwargs: Any,
-    ) -> Any:
-        return super().on_chat_model_start(
-            serialized,
-            messages,
-            run_id=run_id,
-            parent_run_id=parent_run_id,
-            tags=tags,
-            metadata=metadata,
-            **kwargs,
-        )
-
-
-class LangchainSyncAgent(Agent):
-    def __init__(self, content, engine=None):
+class OcharmMSGtypeAgent(Agent):
+    def __init__(self, content, engine=None, msg_queue=None):
         super().__init__(engine)
-        self.timeline = Timeline()  # temp
         self.tools = []
         self.agent = None
-
+        self.msg_queue = msg_queue
+        
         self.handler = ChatModelStartHandler()
         self.chat = ChatOpenAI(model="gpt-4o-mini", callbacks=[self.handler])
-
+        
         self.prompt = ChatPromptTemplate(
             messages=[
                 SystemMessage(content=content),
@@ -61,12 +36,12 @@ class LangchainSyncAgent(Agent):
         self.memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
+    
+    def get_msg_queue(self):
+        return self.msg_queue
 
-    def get_timeline(self):
-        return self.timeline
-
-    def add_tool(self, hof, args_schema, name, description):
-        tool_func = hof(self)
+    def add_tool(self, hof, args_schema, name, description, client):
+        tool_func = hof(self, client)
 
         self.tools.append(
             StructuredTool.from_function(
