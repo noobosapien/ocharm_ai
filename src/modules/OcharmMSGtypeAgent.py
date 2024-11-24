@@ -1,7 +1,7 @@
 import traceback
 
 from engine.core.agent import Agent  
-from MessageHandler import ChatModelStartHandler
+from .MessageHandler import ChatModelStartHandler
 
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
@@ -71,7 +71,7 @@ class OcharmMSGtypeAgent(Agent):
     def process(self, client_id, input):
         try:
             self.agent_executor.invoke({"input": input})
-            return (client_id, self.timeline)
+            return (client_id, self.msg_queue)
 
         except Exception as e:
             print(e.__traceback__)

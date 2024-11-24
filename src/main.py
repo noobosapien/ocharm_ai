@@ -1,10 +1,12 @@
+import time
+from queue import Queue
+
 from engine.piedpiper_engine import Engine
 from modules.OcharmMSGtypeAgent import OcharmMSGtypeAgent
 from tools.msg_classifier_tools import Msg, hof_create_msg, hof_read_msg, hof_update_msg, hof_delete_msg
 
 from engine.core.client import Client
 
-import time
 
 
 def callback(user_id: str, output: str) -> None:
@@ -15,8 +17,10 @@ def callback(user_id: str, output: str) -> None:
 if __name__ == "__main__":
     engine = Engine()
     
-    client = Client(callback=callback)
+    client = Client(user_id="abc123",callback=callback)
     engine.add_client(client)
+    
+    msg_queue = Queue(maxsize=0)
     
     classifier_assistant = OcharmMSGtypeAgent(content="You are an assistant who classifies a message depending on contents as Create, Read, Update, and Delete.\n"
                                               "CALL THE RELEVANT TOOLS WITH THE SAME MESSAGE SENT TO YOU.\n"
@@ -35,7 +39,7 @@ if __name__ == "__main__":
                                               "Another example:\n"
                                               "'Remove the task at 11AM'\n"
                                               "call the delete_task tool with args:\n"
-                                              "content='Remove the task at 11AM'", engine=engine, msg_queue=None)
+                                              "content='Remove the task at 11AM'", engine=engine, msg_queue=msg_queue)
     
     
     classifier_assistant.add_tool(
@@ -73,8 +77,11 @@ if __name__ == "__main__":
     engine.add_agent(client, classifier_assistant)
     
     engine.add_message(
-                client._id, "Create a task to finish the project"
+                client._id, "this task must be editted"
             )
     
-    time.sleep(10)
+    time.sleep(3)
+    engine.remove_agent(client, agent=classifier_assistant)
+    msg = msg_queue.get()
+    print(msg.classification, msg.user_id, msg.content)
     

@@ -1,6 +1,7 @@
 from langchain.callbacks.base import BaseCallbackHandler
 from typing import Any
 from langchain_core.messages import BaseMessage
+from uuid import UUID
 
 
 class ChatModelStartHandler(BaseCallbackHandler):

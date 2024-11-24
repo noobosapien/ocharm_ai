@@ -9,6 +9,9 @@ class Agent:
 
     def add_engine(self, engine):
         self.engine = engine
+        
+    def get_id(self) -> str:
+        return self._id
 
     def process(self, client_id, client_msg):
         try:

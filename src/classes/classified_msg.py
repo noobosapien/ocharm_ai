@@ -1,4 +1,4 @@
-from ..modules.component import Component
+from modules.component import Component
 
 class ClassifiedMSG(Component):
     def __init__(self, user_id:str=None, content:str=None, classification:int=None):

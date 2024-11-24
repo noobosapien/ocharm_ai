@@ -101,6 +101,15 @@ class Engine:
         aq = AgentQueue(agent)
         ctq.agent_queue = aq
 
+    def remove_agent(self, client: Client, agent: Agent = None):
+        ctq = self._find_client_to_queue_(client._id)
+
+        if ctq is None or agent is None:
+            return
+
+        ctq.agents = filter(lambda a: agent.get_id() != agent.get_id(), ctq.agents)
+        ctq.agent_queue = None
+
     def remove_client(self, client: Client):
         self._all_queues = list(
             filter(lambda ctq: (ctq.client._id != client._id), self._all_queues)

@@ -1,7 +1,7 @@
 
 from pydantic.v1 import BaseModel, Field
 
-from classes.ClassifiedMSG import ClassifiedMSG 
+from classes.classified_msg import (ClassifiedMSG) 
 
 
 def hof_create_msg(agent, client):
@@ -10,7 +10,7 @@ def hof_create_msg(agent, client):
     ):
         msg_queue= agent.get_msg_queue()
         msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=1)
-        msg_queue.push(msg)
+        msg_queue.put(msg)
 
         return True
 
@@ -22,7 +22,7 @@ def hof_read_msg(agent, client):
     ):
         msg_queue= agent.get_msg_queue()
         msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=2)
-        msg_queue.push(msg)
+        msg_queue.put(msg)
 
         return True
 
@@ -34,7 +34,7 @@ def hof_update_msg(agent, client):
     ):
         msg_queue= agent.get_msg_queue()
         msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=3)
-        msg_queue.push(msg)
+        msg_queue.put(msg)
 
         return True
 
@@ -46,7 +46,7 @@ def hof_delete_msg(agent, client):
     ):
         msg_queue= agent.get_msg_queue()
         msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=4)
-        msg_queue.push(msg)
+        msg_queue.put(msg)
 
         return True
 
