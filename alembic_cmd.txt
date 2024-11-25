@@ -1,0 +1,3 @@
+alembic init migrations
+alembic -n devdb revision --autogenerate -m "1"
+alembic -n devdb upgrade head
