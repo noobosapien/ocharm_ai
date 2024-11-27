@@ -9,14 +9,12 @@ load_dotenv()
 from models import User
 from db_connection import get_db_session, SessionLocal
 from engine.piedpiper_engine import Engine
-from modules.OcharmMSGtypeAgent import OcharmMSGtypeAgent
-from tools.msg_classifier_tools import (  # noqa: E402
-    Msg,
-    hof_create_msg,
-    hof_read_msg,
-    hof_update_msg,
-    hof_delete_msg,
-)
+
+from helpers.create_classifier_assistant import create_classifier_assistant
+from helpers.create_frame_assistant import create_frame_assistant
+
+
+from classes.task_frame import TaskFrame
 
 from engine.core.client import Client
 
@@ -28,105 +26,86 @@ def callback(user_id: str, output: str) -> None:
 if __name__ == "__main__":
     engine = Engine()
     db = SessionLocal()
+    user_state_dict = {}
+    user_frames = {}
 
     client = Client(user_id="abc123", callback=callback)
     engine.add_client(client)
 
     msg_queue = Queue(maxsize=0)
 
-    classifier_assistant = OcharmMSGtypeAgent(
-        content="You are an assistant who classifies a message depending on contents as Create, Read, Update, and Delete.\n"
-        "CALL THE RELEVANT TOOLS WITH THE SAME MESSAGE SENT TO YOU.\n"
-        "For example:\n"
-        "'Make a task to clean the car in the morning'\n"
-        "call create_msg tool with args:\n"
-        "content='Make a task to clean the car in the morning'\n"
-        "Another example:\n"
-        "'Edit the task to call my friend to complete'\n"
-        "call the update_msg tool with args:\n"
-        "content='Edit the task to call my friend to complete'"
-        "Another example:\n"
-        "'What is the task at 10am?'"
-        "call the read_task tool with args:\n"
-        "content='What is the task at 10am?'"
-        "Another example:\n"
-        "'Remove the task at 11AM'\n"
-        "call the delete_task tool with args:\n"
-        "content='Remove the task at 11AM'",
-        engine=engine,
-        msg_queue=msg_queue,
-    )
-
-    classifier_assistant.add_tool(
-        hof_create_msg,
-        Msg,
-        "create_message",
-        "Create an instance of message with the type 'Create' depending on the contents of the client messsage",
-        client,
-    )
-
-    classifier_assistant.add_tool(
-        hof_read_msg,
-        Msg,
-        "read_message",
-        "Create an instance of message with the type 'Read' depending on the contents of the client messsage",
-        client,
-    )
-
-    classifier_assistant.add_tool(
-        hof_update_msg,
-        Msg,
-        "update_message",
-        "Create an instance of message with the type 'Update' depending on the contents of the client messsage",
-        client,
-    )
-
-    classifier_assistant.add_tool(
-        hof_delete_msg,
-        Msg,
-        "delete_message",
-        "Create an instance of message with the type 'Delete' depending on the contents of the client messsage",
-        client,
-    )
+if client.get_id() not in user_state_dict:
+    classifier_assistant = create_classifier_assistant(engine, client, msg_queue)
 
     engine.add_agent(client, classifier_assistant)
 
-    engine.add_message(client._id, "this task must be editted")
+    engine.add_message(
+        client.get_id(), "create a task on 31/12/2024 night 9 pm to wash the car"
+    )
 
     time.sleep(3)
     engine.remove_agent(client, agent=classifier_assistant)
     msg = msg_queue.get()
+    user_state_dict[client.get_id()] = msg.classification
     print(msg.classification, msg.user_id, msg.content)
 
-    # query the DB and authenticate whether the request can be performed
-    user = db.query(User).filter(User.jid == msg.user_id).first()
-    if not (user.authenticated_use & 1 << msg.classification):
-        raise Exception("User not authorized to perform the action")
+# query the DB and authenticate whether the request can be performed
+user = db.query(User).filter(User.jid == msg.user_id).first()
+if not (user.authenticated_use & 1 << msg.classification):
+    raise Exception("User not authorized to perform the action")
 
-    # depending on the classification do the action
+# depending on the classification do the action
+# create the task agent and add it to the engine
+frame = None
+
+if client.get_id() not in user_frames:
+    frame = TaskFrame()
+    user_frames[client.get_id()] = frame
+else:
+    frame = user_frames[client.get_id()]
+
+frame_assistant = create_frame_assistant(engine=engine, client=client, frame=frame)
+engine.add_agent(client, frame_assistant)
+
+try:
     # switch classification
-    match msg.classification:
+    match user_state_dict[client.get_id()]:
         case 1:
+            print("Creating task")
             # 1: create
-            # make a 'frame' and populate the fields with the given user input
+            # populate the fields of the frame with the user input
             # while frame is not completed ask for more information
             # add to the priority queue
+
+            string = f"This is the current frame {frame.to_json()}\n edit it with the user input 'create a task on 31/12/2024 night 9 pm to wash the car'"
+            engine.add_message(client_id=client.get_id(), input=string)
+
+            if frame.is_complete():
+                task = frame.to_task()
+                del user_frames[client.get_id()]
             pass
 
         case 2:
             # 2: read
+            print("Reading task")
 
             pass
 
         case 3:
             # 3: update
 
+            print("Updating task")
             pass
 
         case 4:
+            print("Deleting task")
+
             # 4: delete
 
             pass
 
         case _:
             pass
+
+except Exception as e:
+    print(e)
