@@ -1,14 +1,17 @@
 import traceback
 
-from engine.core.agent import Agent  
+from engine.core.agent import Agent
 from .MessageHandler import ChatModelStartHandler
 
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.memory import ConversationBufferMemory
-from langchain.prompts import (ChatPromptTemplate, HumanMessagePromptTemplate,
-                               MessagesPlaceholder)
+from langchain.prompts import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    MessagesPlaceholder,
+)
 from langchain.schema import SystemMessage
 from langchain.tools import StructuredTool
 from langchain_openai.chat_models import ChatOpenAI
@@ -20,10 +23,10 @@ class OcharmMSGtypeAgent(Agent):
         self.tools = []
         self.agent = None
         self.msg_queue = msg_queue
-        
+
         self.handler = ChatModelStartHandler()
         self.chat = ChatOpenAI(model="gpt-4o-mini", callbacks=[self.handler])
-        
+
         self.prompt = ChatPromptTemplate(
             messages=[
                 SystemMessage(content=content),
@@ -36,7 +39,7 @@ class OcharmMSGtypeAgent(Agent):
         self.memory = ConversationBufferMemory(
             memory_key="chat_history", return_messages=True
         )
-    
+
     def get_msg_queue(self):
         return self.msg_queue
 
@@ -63,7 +66,7 @@ class OcharmMSGtypeAgent(Agent):
 
         self.agent_executor = AgentExecutor(
             agent=self.agent,
-            verbose=False,
+            verbose=True,
             tools=self.tools,
             memory=self.memory,
         )

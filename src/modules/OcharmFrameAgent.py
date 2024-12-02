@@ -59,6 +59,7 @@ class OcharmFrameAgent(Agent):
         self.update_agent()
 
     def update_agent(self):
+        print(self.tools)
         self.agent = create_openai_functions_agent(
             llm=self.chat,
             tools=self.tools,
@@ -67,7 +68,7 @@ class OcharmFrameAgent(Agent):
 
         self.agent_executor = AgentExecutor(
             agent=self.agent,
-            verbose=False,
+            verbose=True,
             tools=self.tools,
             memory=self.memory,
         )

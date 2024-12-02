@@ -1,4 +1,4 @@
-from pydantic.v1 import BaseModel, Field
+from pydantic.v1 import BaseModel, Field, PositiveInt
 from classes.task_frame import TaskFrame
 
 
@@ -27,7 +27,9 @@ def hof_set_severity(agent, client):
 
 
 class Severity(BaseModel):
-    severity: int = Field("The severity of a task low = '1', medium = '2', high = '3'")
+    severity: int = Field(
+        "The severity of the task either 1 for 'low', 2 for 'medium', or 3 for 'high'"
+    )
 
 
 def hof_set_minute_due(agent, client):

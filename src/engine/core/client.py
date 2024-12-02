@@ -11,7 +11,6 @@ class Client:
     def __init__(
         self,
         id: str = None,
-        user_id: str = None,
         engine=None,
         callback: Callable[[str, str], None] = None,
     ) -> None:
@@ -28,18 +27,16 @@ class Client:
             NoUserIdError: No user_id given at the initialization step
         """
         self._engine = engine
-        self._user_id = user_id
         self._callback = callback
 
         if id is None:
             self._id = uuid.uuid4().hex
         else:
             self._id = id
-            
+
     def get_id(self) -> str:
         """Return the custom defined user_id of the client"""
-        return self._user_id
-        
+        return self._id
 
     def add_engine(self, engine) -> None:
         """Adds the pied_piper engine instance to work with"""
@@ -53,5 +50,6 @@ class Client:
 
     def output(self, output) -> None:
         """Calls the callback given while output is present"""
-        if self._callback is not None:
-            self._callback(self._user_id, output.serialize())
+        # if self._callback is not None:
+        #     self._callback(self._id, output.get().serialize())
+        pass

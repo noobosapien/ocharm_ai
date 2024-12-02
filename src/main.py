@@ -29,7 +29,7 @@ if __name__ == "__main__":
     user_state_dict = {}
     user_frames = {}
 
-    client = Client(user_id="abc123", callback=callback)
+    client = Client(id="abc123", callback=callback)
     engine.add_client(client)
 
     msg_queue = Queue(maxsize=0)
@@ -39,13 +39,12 @@ if client.get_id() not in user_state_dict:
 
     engine.add_agent(client, classifier_assistant)
 
-    engine.add_message(
-        client.get_id(), "create a task on 31/12/2024 night 9 pm to wash the car"
-    )
-
+    engine.add_message(client.get_id(), "create a task")
     time.sleep(3)
+
     engine.remove_agent(client, agent=classifier_assistant)
     msg = msg_queue.get()
+
     user_state_dict[client.get_id()] = msg.classification
     print(msg.classification, msg.user_id, msg.content)
 
@@ -77,13 +76,15 @@ try:
             # while frame is not completed ask for more information
             # add to the priority queue
 
-            string = f"This is the current frame {frame.to_json()}\n edit it with the user input 'create a task on 31/12/2024 night 9 pm to wash the car'"
+            string = "edit current frame with the user input 'create a task on 31/12/2024 night 9 pm to wash the car'"
             engine.add_message(client_id=client.get_id(), input=string)
+
+            time.sleep(4)
+            print(frame.to_json())
 
             if frame.is_complete():
                 task = frame.to_task()
                 del user_frames[client.get_id()]
-            pass
 
         case 2:
             # 2: read

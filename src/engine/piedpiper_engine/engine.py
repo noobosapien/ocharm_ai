@@ -107,7 +107,7 @@ class Engine:
         if ctq is None or agent is None:
             return
 
-        ctq.agents = filter(lambda a: agent.get_id() != agent.get_id(), ctq.agents)
+        ctq.agents = list(filter(lambda a: a.get_id() != agent.get_id(), ctq.agents))
         ctq.agent_queue = None
 
     def remove_client(self, client: Client):

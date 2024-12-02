@@ -16,6 +16,8 @@ from tools.frame_tools import (
     Year_due,
 )
 
+# TODO
+
 
 def create_frame_assistant(engine, client, frame):
     agent = OcharmFrameAgent(
@@ -44,44 +46,44 @@ def create_frame_assistant(engine, client, frame):
         client=client,
     )
 
-    agent.add_tool(
-        hof_set_minute_due,
-        Minute_due,
-        name="Minute due",
-        description="The value of the minute of the time that task is to be completed",
-        client=client,
-    )
+    # agent.add_tool(
+    #     hof_set_minute_due,
+    #     Minute_due,
+    #     name="Minute due",
+    #     description="The value of the minute of the time that task is to be completed",
+    #     client=client,
+    # )
 
-    agent.add_tool(
-        hof_set_hour_due,
-        Hour_due,
-        name="Hour due",
-        description="The value of the hour of the time that task is to be completed",
-        client=client,
-    )
+    # agent.add_tool(
+    #     hof_set_hour_due,
+    #     Hour_due,
+    #     name="Hour due",
+    #     description="The value of the hour of the time that task is to be completed",
+    #     client=client,
+    # )
 
-    agent.add_tool(
-        hof_set_day_due,
-        Day_due,
-        name="Day due",
-        description="The value of the day of the date that task is to be completed",
-        client=client,
-    )
+    # agent.add_tool(
+    #     hof_set_day_due,
+    #     Day_due,
+    #     name="Day due",
+    #     description="The value of the day of the date that task is to be completed",
+    #     client=client,
+    # )
 
-    agent.add_tool(
-        hof_set_month_due,
-        Month_due,
-        name="Month due",
-        description="The value of the month of the date that task is to be completed",
-        client=client,
-    )
+    # agent.add_tool(
+    #     hof_set_month_due,
+    #     Month_due,
+    #     name="Month due",
+    #     description="The value of the month of the date that task is to be completed",
+    #     client=client,
+    # )
 
-    agent.add_tool(
-        hof_set_year_due,
-        Year_due,
-        name="Year due",
-        description="The value of the year of the date that task is to be completed",
-        client=client,
-    )
+    # agent.add_tool(
+    #     hof_set_year_due,
+    #     Year_due,
+    #     name="Year due",
+    #     description="The value of the year of the date that task is to be completed",
+    #     client=client,
+    # )
 
     return agent
