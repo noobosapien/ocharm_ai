@@ -76,10 +76,13 @@ try:
             # while frame is not completed ask for more information
             # add to the priority queue
 
-            string = "edit current frame with the user input 'create a task on 31/12/2024 night 9 pm to wash the car'"
+            string = "edit current frame with the user input 'create a task on december 2024 night 9 pm to wash the car'"
             engine.add_message(client_id=client.get_id(), input=string)
 
-            time.sleep(4)
+            time.sleep(2)
+            while engine.get_process_list_len() != 0:
+                time.sleep(1)
+
             print(frame.to_json())
 
             if frame.is_complete():

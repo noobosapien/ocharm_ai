@@ -1,4 +1,4 @@
-from pydantic.v1 import BaseModel, Field, PositiveInt
+from pydantic.v1 import BaseModel, Field
 from classes.task_frame import TaskFrame
 
 
@@ -28,7 +28,7 @@ def hof_set_severity(agent, client):
 
 class Severity(BaseModel):
     severity: int = Field(
-        "The severity of the task either 1 for 'low', 2 for 'medium', or 3 for 'high'"
+        "The severity of the task either 0 for no severity, 1 for 'low', 2 for 'medium', or 3 for 'high'"
     )
 
 

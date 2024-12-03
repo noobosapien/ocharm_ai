@@ -1,4 +1,5 @@
 import asyncio
+from asyncio import Lock
 
 from dotenv import load_dotenv
 
@@ -39,6 +40,7 @@ class Engine:
         self._all_queues: list[ClientToQueues] = []
         self._loop = asyncio.new_event_loop()
         self._loop_out = asyncio.new_event_loop()
+        self._lock = Lock()
 
         self._agent_manager = AgentManager(engine=self)
         self._client_manager = ClientManager(engine=self)
@@ -52,9 +54,13 @@ class Engine:
         )  # no multithreading in python
         self._engine_manager_output_thread.start()
         self._engine_manager_output_futures = []
+        self.running = 0
 
     def get_loop(self):
         return self._loop
+
+    def get_lock(self):
+        return self._lock
 
     def get_output_loop(self):
         return self._loop_out
@@ -125,6 +131,12 @@ class Engine:
             asyncio.run_coroutine_threadsafe(self.process(), self._loop)
         )
 
+    def get_process_list_len(self):
+        return self._agent_manager.get_tasks_len()
+
+    def dec_running(self):
+        self.running -= 1
+
     def add_agent_output(self, client_id, input):
         ctq = self._find_client_to_queue_(client_id)
 
@@ -139,11 +151,13 @@ class Engine:
         for ctq in self._all_queues:
             if ctq.client_queue._is_new:
                 await self._agent_manager.to_process(ctq)
+                # self.running += 1
 
     async def output(self):
         for ctq in self._all_queues:
             if ctq.agent_queue._is_new:
                 await self._client_manager.to_process(ctq)
+                # self.running -= 1
 
     def quit(self):
         if self._agent_manager is not None:

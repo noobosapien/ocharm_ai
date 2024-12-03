@@ -59,7 +59,6 @@ class OcharmFrameAgent(Agent):
         self.update_agent()
 
     def update_agent(self):
-        print(self.tools)
         self.agent = create_openai_functions_agent(
             llm=self.chat,
             tools=self.tools,
@@ -76,7 +75,7 @@ class OcharmFrameAgent(Agent):
     def process(self, client_id, input):
         try:
             self.agent_executor.invoke({"input": input})
-            return (client_id, self.msg_queue)
+            return (client_id, self.frame)
 
         except Exception as e:
             print(e.__traceback__)

@@ -37,6 +37,16 @@ class AgentManager:
             )
         )
 
+    def get_tasks_len(self):
+        return len(
+            list(
+                filter(
+                    lambda task: (task.done() is False),
+                    self.__tasks,
+                )
+            )
+        )
+
     async def to_process(self, ctq: ClientToQueues) -> None:
         """to_process method that will extract the client messages and use a
         ThreadPool to execute the agents with the messages, and outputs
