@@ -66,7 +66,7 @@ class OcharmMSGtypeAgent(Agent):
 
         self.agent_executor = AgentExecutor(
             agent=self.agent,
-            verbose=True,
+            verbose=False,
             tools=self.tools,
             memory=self.memory,
         )

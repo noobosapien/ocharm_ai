@@ -34,84 +34,129 @@ if __name__ == "__main__":
 
     msg_queue = Queue(maxsize=0)
 
-if client.get_id() not in user_state_dict:
-    classifier_assistant = create_classifier_assistant(engine, client, msg_queue)
+    query = input("How can I help you today?")
 
-    engine.add_agent(client, classifier_assistant)
+    if client.get_id() not in user_state_dict:
+        classifier_assistant = create_classifier_assistant(engine, client, msg_queue)
 
-    engine.add_message(
-        client.get_id(), "make a task on december 2024 night 9 pm to wash the car"
-    )
-    time.sleep(3)
+        engine.add_agent(client, classifier_assistant)
 
-    engine.remove_agent(client, agent=classifier_assistant)
-    msg = msg_queue.get()
+        engine.add_message(client.get_id(), query)
+        time.sleep(3)
 
-    user_state_dict[client.get_id()] = msg.classification
-    print(msg.classification, msg.user_id, msg.content)
+        engine.remove_agent(client, agent=classifier_assistant)
+        msg = msg_queue.get()
 
-# query the DB and authenticate whether the request can be performed
-user = db.query(User).filter(User.jid == msg.user_id).first()
-if not (user.authenticated_use & 1 << msg.classification):
-    raise Exception("User not authorized to perform the action")
+        user_state_dict[client.get_id()] = msg.classification
+        print(msg.classification, msg.user_id, msg.content)
 
-# depending on the classification do the action
-# create the task agent and add it to the engine
-frame = None
+    # query the DB and authenticate whether the request can be performed
+    user = db.query(User).filter(User.jid == msg.user_id).first()
+    if not (user.authenticated_use & 1 << msg.classification):
+        raise Exception("User not authorized to perform the action")
 
-if client.get_id() not in user_frames:
-    frame = TaskFrame()
-    user_frames[client.get_id()] = frame
-else:
-    frame = user_frames[client.get_id()]
+    # depending on the classification do the action
+    # create the task agent and add it to the engine
+    frame = None
 
-frame_assistant = create_frame_assistant(engine=engine, client=client, frame=frame)
-engine.add_agent(client, frame_assistant)
+    if client.get_id() not in user_frames:
+        frame = TaskFrame()
+        user_frames[client.get_id()] = frame
+    else:
+        frame = user_frames[client.get_id()]
 
-try:
-    # switch classification
-    match user_state_dict[client.get_id()]:
-        case 1:
-            print("Creating task")
-            # 1: create
-            # populate the fields of the frame with the user input
-            # while frame is not completed ask for more information
-            # add to the priority queue
+    frame_assistant = create_frame_assistant(engine=engine, client=client, frame=frame)
+    engine.add_agent(client, frame_assistant)
 
-            string = "edit current frame with the user input 'make a task on december 2024 night 9 pm to wash the car'"
-            engine.add_message(client_id=client.get_id(), input=string)
+    try:
+        # switch classification
+        match user_state_dict[client.get_id()]:
+            case 1:
+                print("Creating task")
+                # 1: create
+                # populate the fields of the frame with the user input
+                # while frame is not completed ask for more information
+                # add to the priority queue
 
-            time.sleep(2)
-            while engine.get_process_list_len() != 0:
-                time.sleep(1)
+                string = "edit current frame with the user input: " + query
+                engine.add_message(client_id=client.get_id(), input=string)
 
-            print(frame.to_json())
+                time.sleep(2)
+                while engine.get_process_list_len() != 0:
+                    time.sleep(1)
 
-            if frame.is_complete():
-                task = frame.to_task()
-                del user_frames[client.get_id()]
+                print(frame.to_json())
 
-        case 2:
-            # 2: read
-            print("Reading task")
+                while (
+                    frame.severity == -1
+                    or frame.minute_due == -1
+                    or frame.hour_due == -1
+                    or frame.day_due == -1
+                    or frame.month_due == -1
+                    or frame.year_due == -1
+                ):
+                    missing = []
 
-            pass
+                    if frame.severity == -1:
+                        missing.append("Severity")
 
-        case 3:
-            # 3: update
+                    if frame.minute_due == -1:
+                        missing.append("Minute")
 
-            print("Updating task")
-            pass
+                    if frame.hour_due == -1:
+                        missing.append("Hour")
 
-        case 4:
-            print("Deleting task")
+                    if frame.day_due == -1:
+                        missing.append("Day")
 
-            # 4: delete
+                    if frame.month_due == -1:
+                        missing.append("Month")
 
-            pass
+                    if frame.year_due == -1:
+                        missing.append("Year")
 
-        case _:
-            pass
+                    message = f"Please enter the missing values for: {missing}\n"
 
-except Exception as e:
-    print(e)
+                    query += ", "
+                    query += input(message)
+
+                    string = (
+                        f"edit current frame:{frame.to_json()} with the user input: "
+                        + query
+                    )
+                    engine.add_message(client_id=client.get_id(), input=string)
+
+                    time.sleep(2)
+                    while engine.get_process_list_len() != 0:
+                        time.sleep(1)
+
+                    print(frame.to_json())
+
+                if frame.is_complete():
+                    task = frame.to_task()
+                    del user_frames[client.get_id()]
+
+            case 2:
+                # 2: read
+                print("Reading task")
+
+                pass
+
+            case 3:
+                # 3: update
+
+                print("Updating task")
+                pass
+
+            case 4:
+                print("Deleting task")
+
+                # 4: delete
+
+                pass
+
+            case _:
+                pass
+
+    except Exception as e:
+        print(e)
