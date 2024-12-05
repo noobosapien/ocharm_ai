@@ -33,7 +33,6 @@ class ClientManager:
             for result in asyncio.as_completed(self.tasks):
                 self.clear_finished_tasks()
                 await result
-                # self._engine.dec_running()
 
     def quit(self):
         # self.agent_processor.cancel_all()

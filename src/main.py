@@ -39,7 +39,9 @@ if client.get_id() not in user_state_dict:
 
     engine.add_agent(client, classifier_assistant)
 
-    engine.add_message(client.get_id(), "create a task")
+    engine.add_message(
+        client.get_id(), "make a task on december 2024 night 9 pm to wash the car"
+    )
     time.sleep(3)
 
     engine.remove_agent(client, agent=classifier_assistant)
@@ -76,7 +78,7 @@ try:
             # while frame is not completed ask for more information
             # add to the priority queue
 
-            string = "edit current frame with the user input 'create a task on december 2024 night 9 pm to wash the car'"
+            string = "edit current frame with the user input 'make a task on december 2024 night 9 pm to wash the car'"
             engine.add_message(client_id=client.get_id(), input=string)
 
             time.sleep(2)
