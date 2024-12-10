@@ -1,5 +1,8 @@
 import time
+import sched
+import datetime
 from queue import Queue
+
 
 from dotenv import load_dotenv
 
@@ -23,13 +26,20 @@ def callback(user_id: str, output: str) -> None:
     print(user_id, ": ", output, "\n\n\n")
 
 
+def task_due(task: TaskFrame):
+    print("Task: ", task.content, " is due at time: ", task.hour_due, ":", task.minute_due)
+
+
 if __name__ == "__main__":
+
+    
+
     engine = Engine()
     db = SessionLocal()
     user_state_dict = {}
     user_frames = {}
 
-    client = Client(id="abc123", callback=callback)
+    client = Client(id="abc1234", callback=callback)
     engine.add_client(client)
 
     msg_queue = Queue(maxsize=0)
@@ -67,6 +77,8 @@ if __name__ == "__main__":
 
     frame_assistant = create_frame_assistant(engine=engine, client=client, frame=frame)
     engine.add_agent(client, frame_assistant)
+
+    scheduler = sched.scheduler(time.time, time.sleep)
 
     try:
         # switch classification
@@ -131,10 +143,17 @@ if __name__ == "__main__":
                         time.sleep(1)
 
                     print(frame.to_json())
+                    frame.check_complete()
+                
+                frame.complete = True # use check_complete
 
                 if frame.is_complete():
                     task = frame.to_task()
+                    task_time = datetime.datetime(frame.year_due, frame.month_due, frame.day_due, frame.hour_due, frame.minute_due)
+
+                    scheduler.enterabs(task_time.timestamp(), 1, task_due, (task))
                     del user_frames[client.get_id()]
+                    scheduler.run()
 
             case 2:
                 # 2: read
