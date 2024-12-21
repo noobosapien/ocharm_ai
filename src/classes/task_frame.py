@@ -1,4 +1,5 @@
 import json
+from .Task import Task
 
 
 class TaskFrame:
@@ -13,6 +14,8 @@ class TaskFrame:
         self.day_due = None
         self.month_due = None
         self.year_due = None
+
+        self.timestamp = None
 
     def check_complete(self):
         self.complete = (
@@ -49,8 +52,17 @@ class TaskFrame:
     def is_complete(self):
         return self.complete
 
-    def to_task(self):
-        pass
+    def to_task(self, uid) -> Task:
+        task = Task(uid=uid,
+                    description=self.content,
+                    severity=self.severity,
+                    minute=self.minute_due,
+                    hour=self.hour_due,
+                    day=self.day_due,
+                    month=self.month_due,
+                    year=self.year_due)
+
+        return task
 
     def to_json(self):
         obj = {}

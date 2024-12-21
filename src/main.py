@@ -1,5 +1,12 @@
+from engine.core.client import Client
+from classes.task_frame import TaskFrame
+from helpers.create_frame_assistant import create_frame_assistant
+from helpers.create_classifier_assistant import create_classifier_assistant
+from managers.TaskManager import TaskManager
+from engine.piedpiper_engine import Engine
+from db_connection import get_db_session, SessionLocal
+from models import User
 import time
-import sched
 import datetime
 from queue import Queue
 
@@ -9,35 +16,23 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-from models import User
-from db_connection import get_db_session, SessionLocal
-from engine.piedpiper_engine import Engine
-
-from helpers.create_classifier_assistant import create_classifier_assistant
-from helpers.create_frame_assistant import create_frame_assistant
-
-
-from classes.task_frame import TaskFrame
-
-from engine.core.client import Client
-
-
 def callback(user_id: str, output: str) -> None:
     print(user_id, ": ", output, "\n\n\n")
 
 
-def task_due(task: TaskFrame):
-    print("Task: ", task.content, " is due at time: ", task.hour_due, ":", task.minute_due)
+def task_due(content, hour, minute):
+    # print("task due")
+    print("Task: ", content, " is due at time: ", hour, ":", minute)
 
 
 if __name__ == "__main__":
-
-    
 
     engine = Engine()
     db = SessionLocal()
     user_state_dict = {}
     user_frames = {}
+
+    task_manager = TaskManager(task_due)
 
     client = Client(id="abc1234", callback=callback)
     engine.add_client(client)
@@ -47,7 +42,8 @@ if __name__ == "__main__":
     query = input("How can I help you today?")
 
     if client.get_id() not in user_state_dict:
-        classifier_assistant = create_classifier_assistant(engine, client, msg_queue)
+        classifier_assistant = create_classifier_assistant(
+            engine, client, msg_queue)
 
         engine.add_agent(client, classifier_assistant)
 
@@ -75,10 +71,9 @@ if __name__ == "__main__":
     else:
         frame = user_frames[client.get_id()]
 
-    frame_assistant = create_frame_assistant(engine=engine, client=client, frame=frame)
+    frame_assistant = create_frame_assistant(
+        engine=engine, client=client, frame=frame)
     engine.add_agent(client, frame_assistant)
-
-    scheduler = sched.scheduler(time.time, time.sleep)
 
     try:
         # switch classification
@@ -96,8 +91,6 @@ if __name__ == "__main__":
                 time.sleep(2)
                 while engine.get_process_list_len() != 0:
                     time.sleep(1)
-
-                print(frame.to_json())
 
                 while (
                     frame.severity == -1
@@ -127,13 +120,15 @@ if __name__ == "__main__":
                     if frame.year_due == -1:
                         missing.append("Year")
 
-                    message = f"Please enter the missing values for: {missing}\n"
+                    message = f"Please enter the missing values for: {
+                        missing}\n"
 
                     query += ", "
                     query += input(message)
 
                     string = (
-                        f"edit current frame:{frame.to_json()} with the user input: "
+                        f"edit current frame:{
+                            frame.to_json()} with the user input: "
                         + query
                     )
                     engine.add_message(client_id=client.get_id(), input=string)
@@ -144,16 +139,14 @@ if __name__ == "__main__":
 
                     print(frame.to_json())
                     frame.check_complete()
-                
-                frame.complete = True # use check_complete
+
+                frame.complete = True  # use check_complete
 
                 if frame.is_complete():
-                    task = frame.to_task()
-                    task_time = datetime.datetime(frame.year_due, frame.month_due, frame.day_due, frame.hour_due, frame.minute_due)
-
-                    scheduler.enterabs(task_time.timestamp(), 1, task_due, (task))
+                    task = frame.to_task(client.get_id())
                     del user_frames[client.get_id()]
-                    scheduler.run()
+
+                    task_manager.add_task(task)
 
             case 2:
                 # 2: read
@@ -176,6 +169,17 @@ if __name__ == "__main__":
 
             case _:
                 pass
+
+        while True:
+            msg = task_manager.poll_due_task()
+
+            if msg == None:
+                continue
+
+            print("\n\nTask due:\n\n")
+            print(msg)
+            task_manager.quit()
+            break
 
     except Exception as e:
         print(e)
