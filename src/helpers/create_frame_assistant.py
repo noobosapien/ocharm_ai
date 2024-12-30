@@ -16,6 +16,8 @@ from tools.frame_tools import (
     Year_due,
 )
 
+from tools.date_tools import hof_current_time_and_date, CurrentDateTime
+
 
 def create_frame_assistant(engine, client, frame):
     agent = OcharmFrameAgent(
@@ -38,7 +40,24 @@ def create_frame_assistant(engine, client, frame):
         "call 'MonthDue' tool with args:\n"
         "12\n"
         "call 'YearDue' tool with args:\n"
-        "-1\n",
+        "-1\n"
+        "Another example where the date is not mentioned:\n"
+        "Go to the store to buy some snacks at 11:40 am with low priority\n"
+        "call 'CurrentDateAndTime' tool to get the current date and time because the date is not mentioned to get the date\n"
+        "call 'DayDue' tool with args:\n"
+        "result from the call to the tool 'CurrentDateAndTime'"
+        "call 'MonthDue' tool with args:\n"
+        "result from the call to the tool 'CurrentDateAndTime'"
+        "call 'YearDue' tool with args:\n"
+        "result from the call to the tool 'CurrentDateAndTime'"
+        "call 'MinuteDue' tool with args:\n"
+        "40\n"
+        "call 'HourDue' tool with args:\n"
+        "11\n"
+        "call 'Contents' tool with args:\n"
+        "Go to store and buy some snacks\n"
+        "call 'Severity' tool with args:\n"
+        "1\n",
         engine=engine,
         frame=frame,
     )
@@ -97,6 +116,14 @@ def create_frame_assistant(engine, client, frame):
         name="YearDue",
         description="The value of the year of the date that task is to be completed, IMPORTANT: IF THE VALUE IS NOT PRESENT IN THE INPUT RETURN -1",
         client=client,
+    )
+
+    agent.add_tool(
+        hof_current_time_and_date,
+        CurrentDateTime,
+        name="CurrentDateAndTime",
+        description="Get the date and time of the system at this moment. IMPORTANT: USE THIS TOOL TO ALWAYS GET THE CURRENT TIME WHEN NEEDED DO NOT MAKE ASSUMPTIONS",
+        client=client
     )
 
     return agent

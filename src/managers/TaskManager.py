@@ -9,8 +9,6 @@ from .Scheduler import Scheduler
 class TaskManager:
     def __init__(self, callback):
         self.next_task = None
-        self.all_tasks = []
-        self.pending_tasks = []
 
         self.callback = callback
 
@@ -23,7 +21,6 @@ class TaskManager:
         self.scheduler.start()
 
     def add_task(self, task: Task):
-        self.all_tasks.append(task)
 
         obj = task.serialize()
         obj["type"] = 1
@@ -42,5 +39,15 @@ class TaskManager:
     def get_next_task(self):
         pass
 
+    def get_queue_empty(self):
+        obj = {}
+        obj["type"] = 6
+        obj_json = json.dumps(obj)
+        self.queue_to_sched.put(obj_json)
+
     def quit(self):
+        obj = {}
+        obj["type"] = 'q'
+        obj_json = json.dumps(obj)
+        self.queue_to_sched.put(obj_json)
         self.scheduler.join()

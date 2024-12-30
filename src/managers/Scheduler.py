@@ -1,6 +1,9 @@
 from multiprocessing import Process, Queue
 import json
 import time
+import traceback
+
+from .task_sort import task_sort
 
 
 class Scheduler(Process):
@@ -24,8 +27,10 @@ class Scheduler(Process):
                     match msg_obj["type"]:
                         case 1:
                             # create/add
-                            del msg_obj["type"]
+                            msg_obj["type"] = "sched_task"
                             self.all_tasks.append(msg_obj)
+                            # sort the list
+                            self.sort_all_tasks()
                         case 2:
                             # read
                             pass
@@ -35,23 +40,41 @@ class Scheduler(Process):
                         case 4:
                             # delete
                             pass
+                        case 5:
+                            # finished task
+                            pass
+                        case 6:
+                            # no of tasks
+                            obj = {"type": "sched_len",
+                                   "length": len(self.all_tasks)}
+                            self.out_queue.put(json.dumps(obj))
+
+                        case 'q':
+                            break
                         case _:
                             pass
 
                 for task in self.all_tasks:
                     now_ts = time.time()
 
-                    if now_ts > task["timestamp"]:
+                    if 'timestamp' in task and now_ts > task['timestamp']:
                         self.out_queue.put(json.dumps(task))
                         self.pending_tasks.append(task)
 
-                        self.remove_from_sll_tasks(task)
+                        self.remove_from_all_tasks(task)
 
         except Exception as e:
-            print("Exception occured: ", e)
+            print("Scheduler Exception occured: ", e)
+            traceback.print_exc()
 
-    def remove_from_sll_tasks(self, task):
-        self.all_tasks = filter(
-            lambda t: not (
-                t["timestamp"] == task["timestamp"] and t["description"] == task["description"]),
-            self.all_tasks)
+    def remove_from_all_tasks(self, task):
+        try:
+            self.all_tasks = list(filter(
+                lambda t: not (
+                    t["timestamp"] == task["timestamp"] and t["description"] == task["description"]),
+                self.all_tasks))
+        except Exception as e:
+            print("Remove from all tasks exception: ", e)
+
+    def sort_all_tasks(self):
+        task_sort(self.all_tasks)

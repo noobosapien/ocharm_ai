@@ -9,6 +9,8 @@ from models import User
 import time
 import datetime
 from queue import Queue
+import traceback
+import json
 
 
 from dotenv import load_dotenv
@@ -21,7 +23,6 @@ def callback(user_id: str, output: str) -> None:
 
 
 def task_due(content, hour, minute):
-    # print("task due")
     print("Task: ", content, " is due at time: ", hour, ":", minute)
 
 
@@ -144,13 +145,35 @@ if __name__ == "__main__":
 
                 if frame.is_complete():
                     task = frame.to_task(client.get_id())
+                    task2 = frame.to_task(client.get_id())
+                    task2.hour += 1
+                    task2.timestamp += 200
+
+                    task3 = frame.to_task(client.get_id())
+                    task3.hour -= 1
+                    task3.timestamp -= 200
+
+                    task4 = frame.to_task(client.get_id())
+                    task4.hour -= 3
+                    task4.timestamp -= 21231
+
                     del user_frames[client.get_id()]
 
                     task_manager.add_task(task)
+                    task_manager.add_task(task2)
+                    task_manager.add_task(task3)
+                    task_manager.add_task(task4)
+
+                    print("Created task for id: ", client.get_id())
 
             case 2:
                 # 2: read
                 print("Reading task")
+
+                # Example Queries for reading:
+                # * What is the next task?
+                # * How many tasks are there for today?
+                # * Has the previous task been completed?
 
                 pass
 
@@ -171,15 +194,26 @@ if __name__ == "__main__":
                 pass
 
         while True:
+            task_manager.get_queue_empty()
             msg = task_manager.poll_due_task()
 
             if msg == None:
                 continue
 
-            print("\n\nTask due:\n\n")
-            print(msg)
-            task_manager.quit()
-            break
+            msg = json.loads(msg)
+
+            match msg['type']:
+                case 'sched_task':
+                    print("\n\nTask due:\n\n")
+                    print(msg)
+                case 'sched_len':
+                    if msg["length"] == 0:
+                        task_manager.quit()
+                        break
+
+                case _:
+                    pass
 
     except Exception as e:
-        print(e)
+        print("Main exception: ", e)
+        traceback.print_exc()
