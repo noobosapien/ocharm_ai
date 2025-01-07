@@ -1,5 +1,4 @@
 from pydantic.v1 import BaseModel, Field
-from classes.task_frame import TaskFrame
 
 
 def hof_set_content(agent, client):
@@ -43,7 +42,8 @@ def hof_set_minute_due(agent, client):
 
 
 class Minute_due(BaseModel):
-    minute_due: int = Field("The minute value of a certain time between 0 and 59")
+    minute_due: int = Field(
+        "The minute value of a certain time between 0 and 59")
 
 
 def hof_set_hour_due(agent, client):
@@ -85,7 +85,8 @@ def hof_set_month_due(agent, client):
 
 
 class Month_due(BaseModel):
-    month_due: int = Field("The month value of a certain date between 1 and 12")
+    month_due: int = Field(
+        "The month value of a certain date between 1 and 12")
 
 
 def hof_set_year_due(agent, client):

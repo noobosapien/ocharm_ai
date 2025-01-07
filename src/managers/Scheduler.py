@@ -31,8 +31,12 @@ class Scheduler(Process):
                             self.all_tasks.append(msg_obj)
                             # sort the list
                             self.sort_all_tasks()
+
                         case 2:
-                            # read
+                            # next task
+                            obj = {"type": "sched_next_task",
+                                   "next_task": self.all_tasks[0]}
+                            self.out_queue.put(json.dumps(obj))
                             pass
                         case 3:
                             # update
@@ -62,6 +66,12 @@ class Scheduler(Process):
                         self.pending_tasks.append(task)
 
                         self.remove_from_all_tasks(task)
+
+                for task in self.pending_tasks:
+                    # if the pending task is not completed after a certain time
+                    # notify the relevant parties
+
+                    pass
 
         except Exception as e:
             print("Scheduler Exception occured: ", e)

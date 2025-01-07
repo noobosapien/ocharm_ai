@@ -2,12 +2,12 @@ from engine.core.client import Client
 from classes.task_frame import TaskFrame
 from helpers.create_frame_assistant import create_frame_assistant
 from helpers.create_classifier_assistant import create_classifier_assistant
+from helpers.create_read_assistant import create_read_assistant
 from managers.TaskManager import TaskManager
 from engine.piedpiper_engine import Engine
 from db_connection import get_db_session, SessionLocal
 from models import User
 import time
-import datetime
 from queue import Queue
 import traceback
 import json
@@ -62,20 +62,6 @@ if __name__ == "__main__":
     if not (user.authenticated_use & 1 << msg.classification):
         raise Exception("User not authorized to perform the action")
 
-    # depending on the classification do the action
-    # create the task agent and add it to the engine
-    frame = None
-
-    if client.get_id() not in user_frames:
-        frame = TaskFrame()
-        user_frames[client.get_id()] = frame
-    else:
-        frame = user_frames[client.get_id()]
-
-    frame_assistant = create_frame_assistant(
-        engine=engine, client=client, frame=frame)
-    engine.add_agent(client, frame_assistant)
-
     try:
         # switch classification
         match user_state_dict[client.get_id()]:
@@ -85,6 +71,21 @@ if __name__ == "__main__":
                 # populate the fields of the frame with the user input
                 # while frame is not completed ask for more information
                 # add to the priority queue
+
+                # depending on the classification do the action
+                # create the task agent and add it to the engine
+                frame = None
+
+                if client.get_id() not in user_frames:
+                    frame = TaskFrame()
+                    user_frames[client.get_id()] = frame
+                else:
+                    frame = user_frames[client.get_id()]
+
+                frame_assistant = create_frame_assistant(
+                    engine=engine, client=client, frame=frame)
+
+                engine.add_agent(client, frame_assistant)
 
                 string = "edit current frame with the user input: " + query
                 engine.add_message(client_id=client.get_id(), input=string)
@@ -145,25 +146,12 @@ if __name__ == "__main__":
 
                 if frame.is_complete():
                     task = frame.to_task(client.get_id())
-                    task2 = frame.to_task(client.get_id())
-                    task2.hour += 1
-                    task2.timestamp += 200
-
-                    task3 = frame.to_task(client.get_id())
-                    task3.hour -= 1
-                    task3.timestamp -= 200
-
-                    task4 = frame.to_task(client.get_id())
-                    task4.hour -= 3
-                    task4.timestamp -= 21231
 
                     del user_frames[client.get_id()]
 
                     task_manager.add_task(task)
-                    task_manager.add_task(task2)
-                    task_manager.add_task(task3)
-                    task_manager.add_task(task4)
 
+                    engine.remove_agent(client, agent=frame_assistant)
                     print("Created task for id: ", client.get_id())
 
             case 2:
@@ -175,7 +163,17 @@ if __name__ == "__main__":
                 # * How many tasks are there for today?
                 # * Has the previous task been completed?
 
-                pass
+                read_assistant = create_read_assistant(
+                    engine=engine, client=client, task_manager=task_manager)
+
+                engine.add_agent(client, read_assistant)
+
+                string = "get the tasks from the input: " + query
+                engine.add_message(client_id=client.get_id(), input=string)
+
+                time.sleep(2)
+                while engine.get_process_list_len() != 0:
+                    time.sleep(1)
 
             case 3:
                 # 3: update
@@ -195,7 +193,7 @@ if __name__ == "__main__":
 
         while True:
             task_manager.get_queue_empty()
-            msg = task_manager.poll_due_task()
+            msg = task_manager.poll_due_event()
 
             if msg == None:
                 continue
@@ -210,6 +208,9 @@ if __name__ == "__main__":
                     if msg["length"] == 0:
                         task_manager.quit()
                         break
+
+                case 'sched_next_task':
+                    task_manager.set_next_task(msg['next_task'])
 
                 case _:
                     pass
