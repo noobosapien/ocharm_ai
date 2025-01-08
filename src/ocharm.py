@@ -43,16 +43,9 @@ class Ocharm:
     def task_due(self, content, hour, minute):
         print("Task: ", content, " is due at time: ", hour, ":", minute)
 
-    def client_callback(user_id: str, output: str) -> None:
-        print(user_id, ": ", output, "\n\n\n")
-
-    def create_client(self, jid):
-        client = Client(id=jid, callback=self.client_callback)
-        self.engine.add_client(client)
-
-    def send_to_in_queue(self, msg, text):
+    def send_to_in_queue(self, to, text):
         obj = {'type': 'message',
-               'to': msg["from"], 'msg': text}
+               'to': to, 'msg': text}
         self.xmpp_in_queue.put(json.dumps(obj))
 
     def setup(self):
@@ -74,7 +67,7 @@ class Ocharm:
                         msg = json.loads(msg)
 
                         self.send_to_in_queue(
-                            msg, "I'm processing: \"" + msg['msg'] + "\" please hang on a moment.")
+                            msg["from"], "I'm processing: \"" + msg['msg'] + "\" please hang on a moment.")
 
                         if msg["from"] not in self.client_messages:
                             self.client_messages[msg["from"]] = Queue()
@@ -93,7 +86,12 @@ class Ocharm:
                     msg_queue = self.client_messages[jid]
 
                     if not msg_queue.empty():
-                        print(msg_queue.get())
+                        msg = msg_queue.get()
+                        print(msg)
+                        obj = json.loads(msg)
+                        match obj["type"]:
+                            case "message":
+                                self.send_to_in_queue(obj["to"], obj['msg'])
 
         except Exception as e:
             print("Exception at ocharm: ", e)
