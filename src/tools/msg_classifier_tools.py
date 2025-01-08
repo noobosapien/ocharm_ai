@@ -6,7 +6,8 @@ from classes.classified_msg import ClassifiedMSG
 def hof_create_msg(agent, client):
     def create_msg(content):
         msg_queue = agent.get_msg_queue()
-        msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=1)
+        msg = ClassifiedMSG(user_id=client.get_id(),
+                            content=content, classification=1)
         msg_queue.put(msg)
 
         return True
@@ -17,7 +18,8 @@ def hof_create_msg(agent, client):
 def hof_read_msg(agent, client):
     def read_msg(content):
         msg_queue = agent.get_msg_queue()
-        msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=2)
+        msg = ClassifiedMSG(user_id=client.get_id(),
+                            content=content, classification=2)
         msg_queue.put(msg)
 
         return True
@@ -28,7 +30,8 @@ def hof_read_msg(agent, client):
 def hof_update_msg(agent, client):
     def update_msg(content):
         msg_queue = agent.get_msg_queue()
-        msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=3)
+        msg = ClassifiedMSG(user_id=client.get_id(),
+                            content=content, classification=3)
         msg_queue.put(msg)
 
         return True
@@ -39,7 +42,8 @@ def hof_update_msg(agent, client):
 def hof_delete_msg(agent, client):
     def delete_msg(content):
         msg_queue = agent.get_msg_queue()
-        msg = ClassifiedMSG(user_id=client.get_id(), content=content, classification=4)
+        msg = ClassifiedMSG(user_id=client.get_id(),
+                            content=content, classification=4)
         msg_queue.put(msg)
 
         return True
@@ -47,5 +51,18 @@ def hof_delete_msg(agent, client):
     return delete_msg
 
 
+def hof_unknown_msg(agent, client):
+    def unknown_msg(content):
+        msg_queue = agent.get_msg_queue()
+        msg = ClassifiedMSG(user_id=client.get_id(),
+                            content=content, classification=404)
+        msg_queue.put(msg)
+
+        return True
+
+    return unknown_msg
+
+
 class Msg(BaseModel):
-    content: str = Field(description="The content of the message given by the client")
+    content: str = Field(
+        description="The content of the message given by the client")

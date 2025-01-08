@@ -6,6 +6,7 @@ from tools.msg_classifier_tools import (  # noqa: E402
     hof_read_msg,
     hof_update_msg,
     hof_delete_msg,
+    hof_unknown_msg
 )
 
 
@@ -62,6 +63,15 @@ def create_classifier_assistant(engine, client, msg_queue):
         Msg,
         "delete_message",
         "Create an instance of message with the type 'Delete' depending on the contents of the client messsage",
+        client,
+    )
+
+    classifier_assistant.add_tool(
+        hof_unknown_msg,
+        Msg,
+        "unknown_message",
+        "Create an instance of message with the type 'Unknown' depending on the contents of the client messsage, and if you can't decide whether"
+        "it belongs to one of Create/Read/Update/Delete",
         client,
     )
 
