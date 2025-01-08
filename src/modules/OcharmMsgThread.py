@@ -11,11 +11,13 @@ from helpers.create_classifier_assistant import create_classifier_assistant
 
 
 class OcharmMsgThread(Thread):
-    def __init__(self, jid: str, queue: Queue):
+    def __init__(self, jid: str, queue_to_thread: Queue, queue_to_main: Queue):
         Thread.__init__(self, daemon=True)
 
         self.jid = jid.split("/")[:][0]
-        self.msg_queue = queue
+        self.queue_to_thread = queue_to_thread
+        self.queue_to_main = queue_to_main
+
         self.engine = Engine()
         self.client = Client(self.jid, self.engine, self.callback)
         self.engine.add_client(self.client)
@@ -30,8 +32,8 @@ class OcharmMsgThread(Thread):
     def run(self):
         try:
             while True:
-                msg = self.msg_queue.get()
-                # self.msg_queue.put("recieved message from: " +
+                msg = self.queue_to_thread.get()
+                # self.queue_to_thread.put("recieved message from: " +
                 #                    self.jid + " as: " + msg)
 
                 # Classify message
@@ -49,19 +51,61 @@ class OcharmMsgThread(Thread):
                 self.engine.remove_agent(
                     self.client, agent=self.classifier_assistant)
 
-                print(msg.classification, msg.user_id, msg.content)
+                # Authenticate
+                get_user_obj = {'type': 'get_user', 'jid': self.jid}
+                self.queue_to_main.put(json.dumps(get_user_obj))
+
+                get_user_json = self.queue_to_thread.get()
+                user = json.loads(get_user_json)
+
+                print("User: ", user)
+
+                if msg.classification == 5:
+                    obj = {"type": "message",
+                           "to": self.jid,
+                           "msg": "Sorry I don't understand that task."}
+                    self.queue_to_main.put(json.dumps(obj))
+                    continue
+
+                if not (user['authenticated_use'] & 1 << msg.classification):
+                    obj = {"type": "message",
+                           "to": self.jid,
+                           "msg": "Sorry you are not authenticated to perform this action."}
+                    self.queue_to_main.put(json.dumps(obj))
+                    continue
 
                 # Action of the message
 
                 match msg.classification:
                     case 1:
-                        pass
+                        obj = {"type": "message",
+                               "to": self.jid,
+                               "msg": "I'm creating the task."}
+                        self.queue_to_main.put(json.dumps(obj))
+
+                    case 2:
+                        obj = {"type": "message",
+                               "to": self.jid,
+                               "msg": "I'm looking for the task."}
+                        self.queue_to_main.put(json.dumps(obj))
+
+                    case 3:
+                        obj = {"type": "message",
+                               "to": self.jid,
+                               "msg": "I'm updating the task."}
+                        self.queue_to_main.put(json.dumps(obj))
+
+                    case 4:
+                        obj = {"type": "message",
+                               "to": self.jid,
+                               "msg": "I'm deleting the task."}
+                        self.queue_to_main.put(json.dumps(obj))
 
                     case _:
                         obj = {"type": "message",
                                "to": self.jid,
                                "msg": "Sorry I don't understand that task."}
-                        self.msg_queue.put(json.dumps(obj))
+                        self.queue_to_main.put(json.dumps(obj))
 
         except Exception as e:
             print("Exception at OcharmMsgThread: ", e)

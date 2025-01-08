@@ -55,7 +55,7 @@ def hof_unknown_msg(agent, client):
     def unknown_msg(content):
         msg_queue = agent.get_msg_queue()
         msg = ClassifiedMSG(user_id=client.get_id(),
-                            content=content, classification=404)
+                            content=content, classification=5)
         msg_queue.put(msg)
 
         return True

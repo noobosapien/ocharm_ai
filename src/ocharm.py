@@ -70,28 +70,43 @@ class Ocharm:
                             msg["from"], "I'm processing: \"" + msg['msg'] + "\" please hang on a moment.")
 
                         if msg["from"] not in self.client_messages:
-                            self.client_messages[msg["from"]] = Queue()
+                            self.client_messages[msg["from"]] = (
+                                Queue(), Queue())  # tuple queue_to_thread, queue_to_main
 
-                        self.client_messages[msg["from"]].put(msg['msg'])
+                        self.client_messages[msg["from"]][0].put(msg['msg'])
 
                         # threads are always running
                         if msg["from"] not in self.client_threads:
                             self.client_threads[msg["from"]] = OcharmMsgThread(
                                 msg['from'],
-                                self.client_messages[msg["from"]])
+                                self.client_messages[msg["from"]][0],
+                                self.client_messages[msg["from"]][1],
+                            )
 
                             self.client_threads[msg["from"]].start()
 
                 for jid in self.client_messages:
-                    msg_queue = self.client_messages[jid]
+                    msg_queue = self.client_messages[jid][1]  # queue_to_main
 
                     if not msg_queue.empty():
                         msg = msg_queue.get()
-                        print(msg)
                         obj = json.loads(msg)
                         match obj["type"]:
                             case "message":
                                 self.send_to_in_queue(obj["to"], obj['msg'])
+                            case "get_user":
+                                user = self.db.query(User).filter(
+                                    User.jid == obj["jid"]).first()
+
+                                user_obj = {'name': None,
+                                            'authenticated_use': 0}
+
+                                if user:
+                                    user_obj['name'] = user.name
+                                    user_obj['authenticated_use'] = user.authenticated_use
+
+                                self.client_messages[jid][0].put(
+                                    json.dumps(user_obj))
 
         except Exception as e:
             print("Exception at ocharm: ", e)
