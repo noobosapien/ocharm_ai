@@ -1,3 +1,4 @@
+
 import traceback
 import os
 from multiprocessing import Queue
@@ -31,6 +32,11 @@ def process():
     while True:
         msg = xmpp_out_queue.get()
         print("from xmpp process: ", msg)
+        msg = json.loads(msg)
+
+        obj = {'type': 'message',
+               'to': msg["from"], 'msg': "I'm processing: " + msg['msg']}
+        xmpp_in_queue.put(json.dumps(obj))
 
 
 def quit():

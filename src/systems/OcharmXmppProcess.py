@@ -1,8 +1,11 @@
+
 from multiprocessing import Process, Queue
 import json
 import traceback
+from threading import Thread
 
 from .OcharmXmppBot import OcharmXmppBot
+from .OcharmXmppMessage import OcharmXmppMessage
 
 
 class OcharmXmppProcess(Process):
@@ -10,6 +13,9 @@ class OcharmXmppProcess(Process):
         super(OcharmXmppProcess, self).__init__()
 
         self.bot = OcharmXmppBot(jid, password, self.on_message)
+        self.jid = jid
+        self.password = password
+
         self.in_queue = in_queue
         self.out_queue = out_queue
 
@@ -19,13 +25,13 @@ class OcharmXmppProcess(Process):
         self.bot.register_plugin('xep_0199')  # XMPP Ping
 
         self.bot.connect()
+        self.bot_thread = Thread(target=self.xmpp_process)
+        self.bot_thread.start()
 
     def run(self):
-        # self.bot.process(forever=False)
 
         try:
             while True:
-                self.bot.process(forever=False)
                 msg = self.in_queue.get()
 
                 obj = json.loads(msg)
@@ -34,10 +40,22 @@ class OcharmXmppProcess(Process):
                     case 'ocharm_process_quit':
                         break
                     case 'message':
-                        self.bot.send_message(obj['to'], obj['msg'])
+                        self.xmpp_send_message(obj['to'], obj['msg'])
         except Exception as e:
             print("OcharmXmppProcess Exception")
             traceback.print_exc()
 
+    def xmpp_process(self):
+        self.bot.process()
+
     def on_message(self, message):
         self.out_queue.put(message)
+
+    def xmpp_send_message(self, to, msg):
+        xmpp_message = OcharmXmppMessage(
+            self.jid, self.password, to, msg)
+        xmpp_message.register_plugin('xep_0030')
+        xmpp_message.register_plugin('xep_0199')
+
+        xmpp_message.connect()
+        xmpp_message.process(forever=False)

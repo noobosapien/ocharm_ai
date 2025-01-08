@@ -1,5 +1,4 @@
 import json
-
 import slixmpp
 
 
@@ -17,8 +16,7 @@ class OcharmXmppBot(slixmpp.ClientXMPP):
         await self.get_roster()
 
     def message(self, msg):
-        # self.send_message("migara@xmpp.jp", "A new message", "chat")
         if msg['type'] in ('chat', 'normal'):
             obj = {"from": str(msg['from']), "msg": msg['body']}
             self.callback(json.dumps(obj))
-            # msg.reply("Thanks for sending\n%(body)s" % msg).send()
+            msg.reply("Hold on a sec!").send()
