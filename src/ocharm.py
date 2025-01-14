@@ -8,16 +8,11 @@ from dotenv import load_dotenv
 from systems.OcharmXmppProcess import OcharmXmppProcess
 from modules.OcharmMsgThread import OcharmMsgThread
 
-from engine.core.client import Client
-from classes.task_frame import TaskFrame
-from helpers.create_frame_assistant import create_frame_assistant
-from helpers.create_classifier_assistant import create_classifier_assistant
-from helpers.create_read_assistant import create_read_assistant
+from classes.Task import Task
 from managers.TaskManager import TaskManager
 from engine.piedpiper_engine import Engine
-from db_connection import get_db_session, SessionLocal
+from db_connection import SessionLocal
 from models import User
-import time
 import traceback
 
 load_dotenv()
@@ -107,6 +102,48 @@ class Ocharm:
 
                                 self.client_messages[jid][0].put(
                                     json.dumps(user_obj))
+
+                            case 'create_task':
+                                task = Task()
+                                task.from_json(obj['to'], obj['msg'])
+
+                                self.task_manager.add_task(task)
+
+                            case 'get_task':
+                                task_desc = Task()
+                                task_desc.from_json(obj['to'], obj['msg'])
+
+                                task = self.task_manager.get_task(task_desc)
+
+                            case 'tm_previous_task':
+                                self.task_manager.get_previous_task(obj['to'])
+
+                            case _:
+                                pass
+
+                self.task_manager.get_queue_empty()
+                msg = self.task_manager.poll_due_event()
+
+                if msg is not None:
+                    msg = json.loads(msg)
+
+                    match msg['type']:
+                        case 'sched_task':
+                            print("\n\nTask due:\n\n")
+                            print(msg)
+                            self.send_to_in_queue(
+                                msg['uid'], "Task due: " + msg['description'])
+
+                        case 'sched_previous_task':
+                            # print("Previous task: ", msg['previous_task'])
+                            jid = msg['to']
+                            self.send_to_in_queue(jid, msg['previous_task'])
+
+                        # case 'sched_next_task':
+                        #     self.task_manager.set_next_task(msg['next_task'])
+
+                        # case _:
+                        #     pass
 
         except Exception as e:
             print("Exception at ocharm: ", e)

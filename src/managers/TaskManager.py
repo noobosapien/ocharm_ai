@@ -30,6 +30,14 @@ class TaskManager:
         refresh_json = json.dumps(refresh)
         self.queue_to_sched.put(refresh_json)
 
+    def get_previous_task(self, to):
+        get_prev = {'type': 3, 'to': to}
+        get_prev_json = json.dumps(get_prev)
+        self.queue_to_sched.put(get_prev_json)
+
+        task = self.queue_to_tm.get()
+        return task
+
     def poll_due_event(self):
         if self.queue_to_tm.empty():
             return None

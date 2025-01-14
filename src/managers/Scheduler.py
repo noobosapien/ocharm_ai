@@ -37,10 +37,18 @@ class Scheduler(Process):
                             obj = {"type": "sched_next_task",
                                    "next_task": self.all_tasks[0]}
                             self.out_queue.put(json.dumps(obj))
-                            pass
                         case 3:
-                            # update
-                            pass
+                            # previous task
+                            prev = None
+                            if len(self.pending_tasks) > 0:
+                                prev = self.pending_tasks[len(
+                                    self.pending_tasks) - 1]
+                                prev["type"] = "sched_previous_task"
+
+                            obj = {"type": "sched_previous_task",
+                                   "previous_task": prev,
+                                   'to': msg_obj['to']}
+                            self.out_queue.put(json.dumps(obj))
                         case 4:
                             # delete
                             pass
