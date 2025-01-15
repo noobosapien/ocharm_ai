@@ -33,7 +33,6 @@ class OcharmXmppProcess(Process):
         try:
             while True:
                 msg = self.in_queue.get()
-
                 obj = json.loads(msg)
 
                 match obj['type']:

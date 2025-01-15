@@ -213,16 +213,6 @@ class OcharmMsgThread(Thread):
                                        "to": self.jid}
 
                                 self.queue_to_main.put(json.dumps(obj))
-                                # Wait for the message
-                                tm_msg = self.queue_to_thread.get()
-
-                                print("tm_msg: ", tm_msg)
-
-                                obj = {"type": "message",
-                                       "to": self.jid,
-                                       "msg": tm_msg}
-                                self.queue_to_main.put(json.dumps(obj))
-                                # Send to the user
 
                             case 2:
                                 obj = {"type": "message",
