@@ -50,11 +50,20 @@ def create_classifier_assistant(engine, client, msg_queue):
         client,
     )
 
+    # classifier_assistant.add_tool(
+    #     hof_update_msg,
+    #     Msg,
+    #     "update_message",
+    #     "Create an instance of message with the type 'Update' depending on the contents of the client messsage",
+    #     client,
+    # )
+
     classifier_assistant.add_tool(
         hof_update_msg,
         Msg,
-        "update_message",
-        "Create an instance of message with the type 'Update' depending on the contents of the client messsage",
+        "complete_last_message",
+        "Create an instance of message with the type 'Complete the last task' depending on the contents of the client messsage,\n"
+        "the content should be about completing the last task for be this classification.",
         client,
     )
 

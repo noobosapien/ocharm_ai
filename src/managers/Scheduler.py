@@ -2,6 +2,7 @@ from multiprocessing import Process, Queue
 import json
 import time
 import traceback
+from datetime import datetime, timedelta
 
 from .task_sort import task_sort
 
@@ -76,6 +77,19 @@ class Scheduler(Process):
                                    'to': msg_obj['to']}
                             self.out_queue.put(json.dumps(obj))
 
+                        case 'tm_sched_complete_prev':
+                            completed = None
+
+                            if len(self.pending_tasks) > 0:
+                                completed = self.pending_tasks.pop()
+                                completed['type'] = "sched_complete_task"
+
+                            obj = {"type": "sched_complete_task",
+                                   "complete_task": completed,
+                                   'to': msg_obj['to']}
+                            self.out_queue.put(json.dumps(obj))
+                            pass
+
                         case 'q':
                             # Quit the loop
                             break
@@ -98,7 +112,53 @@ class Scheduler(Process):
                     # if the pending task is not completed after a certain time
                     # notify the relevant parties
 
-                    pass
+                    now_ts = datetime.now()
+
+                    if 'next_timestamp' in task and now_ts.timestamp() > task['next_timestamp']:
+                        print("next_timestamp: ", task['next_timestamp'], type(
+                            task['next_timestamp']), task['next_timestamp'] < now_ts.timestamp())
+
+                        print("Pending task: ", task)
+
+                        match task['severity']:
+                            case 1:
+                                if task['notified'] >= 5:
+                                    obj = {
+                                        'type': 'sched_to_client_notify_others',
+                                        'to': task['uid'],
+                                        'notify': task['notified']
+                                    }
+                                    self.out_queue.put(json.dumps(obj))
+                            case 2:
+                                if task['notified'] >= 3:
+                                    pass
+                            case 3:
+                                if task['notified'] >= 2:
+                                    pass
+                            case _:
+                                pass
+
+                        task['notified'] += 1
+
+                        minutes = 1
+
+                        if task['severity'] == 1:
+                            minutes = 3
+                        elif task['severity'] == 2:
+                            minutes = 2
+
+                        next_time = datetime.now() + timedelta(minutes=minutes)
+
+                        task['next_timestamp'] = next_time.timestamp()
+
+                        task['type'] = 'sched_to_client_pending_task_due'
+
+                        obj = {
+                            'type': 'sched_to_client_pending_task_due',
+                            'to': task['uid'],
+                            'task': task
+                        }
+                        self.out_queue.put(json.dumps(obj))
 
         except Exception as e:
             print("Scheduler Exception occured: ", e)

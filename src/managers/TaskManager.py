@@ -53,6 +53,11 @@ class TaskManager:
         get_next_json = json.dumps(get_next)
         self.queue_to_sched.put(get_next_json)
 
+    def complete_prev_task(self, to):
+        get_next = {'type': 'tm_sched_complete_prev', 'to': to}
+        get_next_json = json.dumps(get_next)
+        self.queue_to_sched.put(get_next_json)
+
     def poll_due_event(self):
         """Gets events from the scheduler and returns to the caller.
         If there are no events from the scheduler, returns None."""

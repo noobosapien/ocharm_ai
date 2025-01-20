@@ -142,12 +142,6 @@ class Ocharm:
                                 task.from_json(obj['to'], obj['msg'])
                                 self.task_manager.add_task(task)
 
-                            # case 'get_task':
-                            #     task_desc = Task()
-                            #     task_desc.from_json(obj['to'], obj['msg'])
-
-                            #     task = self.task_manager.get_task(task_desc)
-
                             case 'tm_previous_task':
                                 # Call the function to get the previous task from the task manager
                                 # The input from the task manager is not handled here.
@@ -159,6 +153,9 @@ class Ocharm:
                                 # The input from the task manager is not handled here.
                                 # It is handled in the next part of the loop
                                 self.task_manager.get_next_task(obj['to'])
+
+                            case 'tm_complete_prev_task':
+                                self.task_manager.complete_prev_task(obj['to'])
 
                             case _:
                                 pass
@@ -195,7 +192,6 @@ class Ocharm:
                         case 'sched_next_task':
                             # When the next task is asked for, happens after the function call of the last part of the loop
                             # Send the next task to the client who asked for it
-                            print("Next task: ", msg['next_task'])
                             jid = msg['to']
 
                             if msg['next_task'] is None:
@@ -204,6 +200,28 @@ class Ocharm:
                             else:
                                 self.send_to_in_queue(
                                     jid, json.dumps(msg['next_task']))
+
+                        case 'sched_complete_task':
+                            jid = msg['to']
+
+                            if msg['complete_task'] is None:
+                                self.send_to_in_queue(
+                                    jid, 'There was no task to complete.')
+                            else:
+                                self.send_to_in_queue(
+                                    jid, "I set the task: " + json.dumps(msg['complete_task']) + " as completed.")
+
+                        case 'sched_to_client_pending_task_due':
+                            jid = msg['to']
+
+                            self.send_to_in_queue(
+                                jid, 'Pending task: ' + json.dumps(msg['task']) + ' please complete this task the time was due earlier.')
+
+                        case 'sched_to_client_notify_others':
+                            jid = msg['to']
+
+                            self.send_to_in_queue(
+                                jid, 'Since I have notified you ' + msg['notified'] + ' and got no reply. I will notify someone else you have on your list.')
 
                         case _:
                             pass
