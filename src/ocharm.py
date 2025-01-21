@@ -3,17 +3,19 @@ import traceback
 import os
 from multiprocessing import Queue
 import json
+import traceback
 
 from dotenv import load_dotenv
 from systems.OcharmXmppProcess import OcharmXmppProcess
 from modules.OcharmMsgThread import OcharmMsgThread
+from helpers.get_primary_users import get_primary_users
+from helpers.get_user import get_user
 
 from classes.Task import Task
 from managers.TaskManager import TaskManager
 from engine.piedpiper_engine import Engine
 from db_connection import SessionLocal
 from models import User
-import traceback
 
 load_dotenv()
 
@@ -221,7 +223,14 @@ class Ocharm:
                             jid = msg['to']
 
                             self.send_to_in_queue(
-                                jid, 'Since I have notified you ' + msg['notified'] + ' and got no reply. I will notify someone else you have on your list.')
+                                jid, 'Since I have notified you ' + str(msg['notified']) + ' and got no reply. I will notify someone else you have on your list.')
+
+                            users = get_primary_users(jid)
+                            main_user = get_user(jid)
+
+                            for user in users:
+                                self.send_to_in_queue(
+                                    user.jid, 'Hi ' + user.name + ', ' + main_user.name + " hasn't completed the task: " + json.dumps(msg['task']) + ", could you please look into that?")
 
                         case _:
                             pass

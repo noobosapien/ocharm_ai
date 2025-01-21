@@ -3,6 +3,7 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
+    ForeignKey,
     CheckConstraint,
     UniqueConstraint,
 )
@@ -17,6 +18,7 @@ class User(Base):
     authenticated_use = Column(
         Integer, nullable=False, default="100", server_default="100"
     )
+    primary_user = Column(Integer, ForeignKey("user.id"), nullable=True)
 
     __table_args__ = (
         CheckConstraint("LENGTH(name) > 0", name="user_name_length_check"),

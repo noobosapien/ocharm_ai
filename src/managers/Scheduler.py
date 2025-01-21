@@ -122,19 +122,33 @@ class Scheduler(Process):
 
                         match task['severity']:
                             case 1:
-                                if task['notified'] >= 5:
+                                if task['notified'] >= 3:
                                     obj = {
                                         'type': 'sched_to_client_notify_others',
                                         'to': task['uid'],
-                                        'notify': task['notified']
+                                        'notified': task['notified'],
+                                        'task': task
                                     }
                                     self.out_queue.put(json.dumps(obj))
                             case 2:
                                 if task['notified'] >= 3:
-                                    pass
+                                    obj = {
+                                        'type': 'sched_to_client_notify_others',
+                                        'to': task['uid'],
+                                        'notified': task['notified'],
+                                        'task': task
+
+                                    }
+                                    self.out_queue.put(json.dumps(obj))
                             case 3:
                                 if task['notified'] >= 2:
-                                    pass
+                                    obj = {
+                                        'type': 'sched_to_client_notify_others',
+                                        'to': task['uid'],
+                                        'notified': task['notified'],
+                                        'task': task
+                                    }
+                                    self.out_queue.put(json.dumps(obj))
                             case _:
                                 pass
 
